@@ -73,29 +73,12 @@ Playwright はあとで手動導入するため、今回は Playwright のイン
 
 - Todo の入力欄が分かりにくい、または入力できないように見える
 - `data-testid="todo-input"` が Vuetify の外側要素に付き、実際の `input` に届いていない
-- localStorage 保存が未実装だった
 - Vuetify コンポーネントの登録が不十分で、後の E2E テスト時に実DOMが期待通り生成されない問題があった
 
 この段階では、UI を見て違和感に気づきました。
+<img width="1440" height="785" alt="Image" src="https://github.com/user-attachments/assets/bc22276b-292d-4756-8f6a-2e69e4943443" />
 
 ただし、後から Playwright を入れることで、こうした問題は「なんとなく動かない」ではなく、失敗するテストとして表面化します。今回の流れでは、ここが一番おもしろいところでした。
-
-### localStorage 保存の追加
-
-入力できない問題を確認したあと、追加で以下を依頼しました。
-
-```text
-うーん入力できないよ
-ちなみに入力データはローカルストレージに保存するようにしてほしい
-```
-
-これにより、Todo の追加・完了切り替え・削除・全削除が localStorage に保存されるようになりました。
-
-保存キーは以下です。
-
-```js
-const STORAGE_KEY = "playwright-practice-todos";
-```
 
 ## Playwright 導入
 
@@ -118,7 +101,7 @@ Playwright 公式の Installation ページでは、既存プロジェクトへ�
 まず、シナリオ検討を依頼しました。
 
 ```text
-playwiteを導入しましたので
+Playwrightを導入しましたので
 実装コードを元にシナリオを検討してください
 ```
 
@@ -239,6 +222,8 @@ npm run test:e2e
 ```
 
 Chromium、Firefox、WebKit の3ブラウザで9本ずつ、合計27本のテストが通りました。
+
+<img width="1440" height="786" alt="Image" src="https://github.com/user-attachments/assets/89293314-314a-47cc-9b84-def908abf6ae" />
 
 ## やってみて分かったこと
 
