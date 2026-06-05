@@ -6,6 +6,8 @@ const todoText = ref("");
 const todos = ref(loadTodos());
 const currentFilter = ref("all");
 const nextId = ref(getNextId(todos.value));
+const editingTodoId = ref(null);
+const editingTodoText = ref("");
 
 const filters = [
   { label: "すべて", value: "all", testId: "filter-all-button" },
@@ -82,10 +84,36 @@ function addTodo() {
 
 function deleteTodo(id) {
   todos.value = todos.value.filter((todo) => todo.id !== id);
+
+  if (editingTodoId.value === id) {
+    cancelEditingTodo();
+  }
 }
 
 function clearAllTodos() {
   todos.value = [];
+  cancelEditingTodo();
+}
+
+function startEditingTodo(todo) {
+  editingTodoId.value = todo.id;
+  editingTodoText.value = todo.title;
+}
+
+function saveEditingTodo(todo) {
+  const title = editingTodoText.value.trim();
+
+  if (!title) {
+    return;
+  }
+
+  todo.title = title;
+  cancelEditingTodo();
+}
+
+function cancelEditingTodo() {
+  editingTodoId.value = null;
+  editingTodoText.value = "";
 }
 </script>
 
@@ -177,10 +205,50 @@ function clearAllTodos() {
                 </template>
 
                 <v-list-item-title class="todo-item-title">
-                  {{ todo.title }}
+                  <form
+                    v-if="editingTodoId === todo.id"
+                    class="todo-edit-form"
+                    @submit.prevent="saveEditingTodo(todo)"
+                  >
+                    <v-text-field
+                      v-model="editingTodoText"
+                      label="Todo 名"
+                      variant="outlined"
+                      density="compact"
+                      hide-details
+                      autofocus
+                      @keyup.esc="cancelEditingTodo"
+                    />
+                  </form>
+                  <span v-else>{{ todo.title }}</span>
                 </v-list-item-title>
 
                 <template #append>
+                  <v-btn
+                    v-if="editingTodoId === todo.id"
+                    icon="mdi-check"
+                    color="primary"
+                    variant="text"
+                    :aria-label="`${todo.title} の編集を保存`"
+                    :disabled="!editingTodoText.trim()"
+                    @click="saveEditingTodo(todo)"
+                  />
+                  <v-btn
+                    v-if="editingTodoId === todo.id"
+                    icon="mdi-close"
+                    color="default"
+                    variant="text"
+                    :aria-label="`${todo.title} の編集をキャンセル`"
+                    @click="cancelEditingTodo"
+                  />
+                  <v-btn
+                    v-else
+                    icon="mdi-pencil-outline"
+                    color="primary"
+                    variant="text"
+                    :aria-label="`${todo.title} を編集`"
+                    @click="startEditingTodo(todo)"
+                  />
                   <v-btn
                     data-testid="delete-todo-button"
                     icon="mdi-delete-outline"

@@ -80,9 +80,18 @@ body {
   overflow-wrap: anywhere;
 }
 
+.todo-edit-form {
+  width: 100%;
+}
+
 .todo-item--completed .todo-item-title {
   color: #64748b;
   text-decoration: line-through;
+}
+
+.todo-item--completed .todo-edit-form {
+  color: initial;
+  text-decoration: none;
 }
 
 .empty-message {
