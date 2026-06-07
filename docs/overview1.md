@@ -95,6 +95,7 @@ git diff --unified=3 --output=e2e-diff.txt master...HEAD -- src/App.vue src/styl
 ```
 
 実行すると、差分をまとめたテキストが作成されました。
+
 <img width="555" height="632" alt="Image" src="https://github.com/user-attachments/assets/3daaaebc-eb7f-4dd0-8eb1-d5d233b1d10f" />
 
 これで、Copilotに渡す情報を選定できました。
