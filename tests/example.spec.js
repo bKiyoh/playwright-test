@@ -7,6 +7,10 @@ function todoInput(page) {
   return page.locator('input[type="text"]').first();
 }
 
+function editTodoInput(page) {
+  return page.locator(".todo-edit-form").locator('input[type="text"]');
+}
+
 async function addTodo(page, title) {
   await todoInput(page).fill(title);
   await page.getByTestId("add-todo-button").click();
@@ -116,6 +120,135 @@ test("個別削除と全削除ができる", async ({ page }) => {
   );
   await expect(page.getByTestId("todo-count")).toHaveText(
     "合計 0 件 / 未完了 0 件 / 完了済み 0 件",
+  );
+});
+
+test("Todoの編集を開始できる", async ({ page }) => {
+  await page.goto("/");
+
+  await addTodo(page, "編集するTodo");
+  await page.getByRole("button", { name: "編集するTodo を編集" }).click();
+
+  await expect(page.locator(".todo-edit-form")).toBeVisible();
+  await expect(editTodoInput(page)).toHaveValue("編集するTodo");
+  await expect(
+    page.getByRole("button", { name: "編集するTodo の編集を保存" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "編集するTodo の編集をキャンセル" }),
+  ).toBeVisible();
+});
+
+test("Todoのタイトルを保存ボタンで編集できる", async ({ page }) => {
+  await page.goto("/");
+
+  await addTodo(page, "編集前のTodo");
+  await page.getByRole("button", { name: "編集前のTodo を編集" }).click();
+  await editTodoInput(page).fill("編集後のTodo");
+  await page.getByRole("button", { name: "編集前のTodo の編集を保存" }).click();
+
+  await expect(page.getByTestId("todo-item")).toContainText("編集後のTodo");
+  await expect(page.getByText("編集前のTodo")).toBeHidden();
+  await expect(page.locator(".todo-edit-form")).toBeHidden();
+});
+
+test("TodoのタイトルをEnterで編集保存できる", async ({ page }) => {
+  await page.goto("/");
+
+  await addTodo(page, "Enter保存前のTodo");
+  await page.getByRole("button", { name: "Enter保存前のTodo を編集" }).click();
+  await editTodoInput(page).fill("Enter保存後のTodo");
+  await editTodoInput(page).press("Enter");
+
+  await expect(page.getByTestId("todo-item")).toContainText(
+    "Enter保存後のTodo",
+  );
+  await expect(page.getByText("Enter保存前のTodo")).toBeHidden();
+  await expect(page.locator(".todo-edit-form")).toBeHidden();
+});
+
+test("Todoの編集をキャンセルボタンで取り消せる", async ({ page }) => {
+  await page.goto("/");
+
+  await addTodo(page, "元のTodo");
+  await page.getByRole("button", { name: "元のTodo を編集" }).click();
+  await editTodoInput(page).fill("保存しないTodo");
+  await page.getByRole("button", { name: "元のTodo の編集をキャンセル" }).click();
+
+  await expect(page.getByTestId("todo-item")).toContainText("元のTodo");
+  await expect(page.getByText("保存しないTodo")).toBeHidden();
+  await expect(page.locator(".todo-edit-form")).toBeHidden();
+});
+
+test("Todoの編集をEscで取り消せる", async ({ page }) => {
+  await page.goto("/");
+
+  await addTodo(page, "Esc前のTodo");
+  await page.getByRole("button", { name: "Esc前のTodo を編集" }).click();
+  await editTodoInput(page).fill("Escで保存しないTodo");
+  await editTodoInput(page).press("Escape");
+
+  await expect(page.getByTestId("todo-item")).toContainText("Esc前のTodo");
+  await expect(page.getByText("Escで保存しないTodo")).toBeHidden();
+  await expect(page.locator(".todo-edit-form")).toBeHidden();
+});
+
+test("空白のみのタイトルではTodoを編集保存できない", async ({ page }) => {
+  await page.goto("/");
+
+  await addTodo(page, "空白にしないTodo");
+  await page.getByRole("button", { name: "空白にしないTodo を編集" }).click();
+  await editTodoInput(page).fill("   ");
+
+  await expect(
+    page.getByRole("button", { name: "空白にしないTodo の編集を保存" }),
+  ).toBeDisabled();
+  await editTodoInput(page).press("Enter");
+  await expect(page.locator(".todo-edit-form")).toBeVisible();
+  await page
+    .getByRole("button", { name: "空白にしないTodo の編集をキャンセル" })
+    .click();
+  await expect(page.getByTestId("todo-item")).toContainText("空白にしないTodo");
+});
+
+test("編集中のTodoを削除すると編集状態も解除される", async ({ page }) => {
+  await page.goto("/");
+
+  await addTodo(page, "削除する編集中Todo");
+  await page.getByRole("button", { name: "削除する編集中Todo を編集" }).click();
+  await page.getByRole("button", { name: "削除する編集中Todo を削除" }).click();
+
+  await expect(page.getByTestId("todo-item")).toHaveCount(0);
+  await expect(page.locator(".todo-edit-form")).toBeHidden();
+});
+
+test("編集中に全削除すると編集状態も解除される", async ({ page }) => {
+  await page.goto("/");
+
+  await addTodo(page, "編集中に全削除するTodo");
+  await page
+    .getByRole("button", { name: "編集中に全削除するTodo を編集" })
+    .click();
+  await page.getByTestId("clear-all-button").click();
+
+  await expect(page.getByTestId("todo-item")).toHaveCount(0);
+  await expect(page.locator(".todo-edit-form")).toBeHidden();
+});
+
+test("完了済みTodoの編集中フォームには取り消し線が付かない", async ({
+  page,
+}) => {
+  await page.goto("/");
+
+  await addTodo(page, "完了済みを編集するTodo");
+  await page.getByTestId("todo-checkbox").click();
+  await page
+    .getByRole("button", { name: "完了済みを編集するTodo を編集" })
+    .click();
+
+  await expect(page.locator(".todo-edit-form")).toHaveCSS(
+    "text-decoration-line",
+    "none",
   );
 });
 
