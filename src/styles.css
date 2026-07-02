@@ -35,7 +35,7 @@ body {
 
 .todo-form {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr) minmax(160px, 220px) auto;
   gap: 12px;
   align-items: start;
 }
@@ -80,8 +80,23 @@ body {
   overflow-wrap: anywhere;
 }
 
+.todo-display {
+  display: grid;
+  gap: 4px;
+}
+
+.todo-due-date {
+  width: fit-content;
+  color: #475569;
+  font-size: 0.82rem;
+  line-height: 1.4;
+}
+
 .todo-edit-form {
-  width: 100%;
+  width: min(100%, 520px);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(150px, 190px);
+  gap: 8px;
 }
 
 .todo-item--completed .todo-item-title {
@@ -113,6 +128,10 @@ body {
   }
 
   .todo-form {
+    grid-template-columns: 1fr;
+  }
+
+  .todo-edit-form {
     grid-template-columns: 1fr;
   }
 

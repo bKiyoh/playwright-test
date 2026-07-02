@@ -1,13 +1,21 @@
 <script setup>
 import { computed, ref, watch } from "vue";
+import {
+  getDueDateLabel,
+  normalizeDueDate,
+  sortTodosByDueDate,
+} from "./todoLogic";
 
 const STORAGE_KEY = "playwright-practice-todos";
 const todoText = ref("");
+const todoDueDate = ref("");
 const todos = ref(loadTodos());
 const currentFilter = ref("all");
 const nextId = ref(getNextId(todos.value));
 const editingTodoId = ref(null);
 const editingTodoText = ref("");
+const editingTodoDueDate = ref("");
+const today = getTodayString();
 
 const filters = [
   { label: "すべて", value: "all", testId: "filter-all-button" },
@@ -16,15 +24,17 @@ const filters = [
 ];
 
 const filteredTodos = computed(() => {
+  const sortedTodos = sortTodosByDueDate(todos.value);
+
   if (currentFilter.value === "active") {
-    return todos.value.filter((todo) => !todo.completed);
+    return sortedTodos.filter((todo) => !todo.completed);
   }
 
   if (currentFilter.value === "completed") {
-    return todos.value.filter((todo) => todo.completed);
+    return sortedTodos.filter((todo) => todo.completed);
   }
 
-  return todos.value;
+  return sortedTodos;
 });
 
 const todoCountText = computed(() => {
@@ -52,10 +62,26 @@ function loadTodos() {
 
   try {
     const parsedTodos = JSON.parse(savedTodos);
-    return Array.isArray(parsedTodos) ? parsedTodos : [];
+    if (!Array.isArray(parsedTodos)) {
+      return [];
+    }
+
+    return parsedTodos.map((todo) => ({
+      ...todo,
+      dueDate: normalizeDueDate(todo.dueDate),
+    }));
   } catch {
     return [];
   }
+}
+
+function getTodayString() {
+  const date = new Date();
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+
+  return `${year}-${month}-${day}`;
 }
 
 function getNextId(todoItems) {
@@ -77,9 +103,11 @@ function addTodo() {
     id: nextId.value,
     title,
     completed: false,
+    dueDate: normalizeDueDate(todoDueDate.value),
   });
   nextId.value += 1;
   todoText.value = "";
+  todoDueDate.value = "";
 }
 
 function deleteTodo(id) {
@@ -98,6 +126,7 @@ function clearAllTodos() {
 function startEditingTodo(todo) {
   editingTodoId.value = todo.id;
   editingTodoText.value = todo.title;
+  editingTodoDueDate.value = todo.dueDate || "";
 }
 
 function saveEditingTodo(todo) {
@@ -108,12 +137,14 @@ function saveEditingTodo(todo) {
   }
 
   todo.title = title;
+  todo.dueDate = normalizeDueDate(editingTodoDueDate.value);
   cancelEditingTodo();
 }
 
 function cancelEditingTodo() {
   editingTodoId.value = null;
   editingTodoText.value = "";
+  editingTodoDueDate.value = "";
 }
 </script>
 
@@ -135,6 +166,15 @@ function cancelEditingTodo() {
                 density="comfortable"
                 hide-details
                 autofocus
+              />
+              <v-text-field
+                v-model="todoDueDate"
+                :input-props="{ 'data-testid': 'todo-due-date-input' }"
+                type="date"
+                label="期限日"
+                variant="outlined"
+                density="comfortable"
+                hide-details
               />
               <v-btn
                 data-testid="add-todo-button"
@@ -219,8 +259,26 @@ function cancelEditingTodo() {
                       autofocus
                       @keyup.esc="cancelEditingTodo"
                     />
+                    <v-text-field
+                      v-model="editingTodoDueDate"
+                      type="date"
+                      label="期限日"
+                      variant="outlined"
+                      density="compact"
+                      hide-details
+                      @keyup.esc="cancelEditingTodo"
+                    />
                   </form>
-                  <span v-else>{{ todo.title }}</span>
+                  <div v-else class="todo-display">
+                    <span>{{ todo.title }}</span>
+                    <span
+                      v-if="todo.dueDate"
+                      data-testid="todo-due-date"
+                      class="todo-due-date"
+                    >
+                      {{ getDueDateLabel(todo, today) }}
+                    </span>
+                  </div>
                 </v-list-item-title>
 
                 <template #append>
